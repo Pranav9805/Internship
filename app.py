@@ -2,21 +2,26 @@ from flask import Flask, render_template, Response, jsonify
 import cv2
 import tensorflow as tf
 import numpy as np
+import os
 
 app = Flask(__name__)
 
-model = tf.keras.models.load_model("model.h5")
+# Path to dataset directory used during training
+dataset_dir = r"D:/Sign_Language_Detector/Indian"
 
-labels = ['1', '2', '3', '4',
-          '5', '6', '7', '8', '9','A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
-          'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
-          'U', 'V', 'W', 'X', 'Y', 'Z']
+# Automatically load sorted folder names as labels
+labels = sorted(os.listdir(dataset_dir))
+print("Labels detected:", labels)  # DEBUG: check this in console
+
+model = tf.keras.models.load_model("model.h5")
 
 cap = cv2.VideoCapture(0)
 
 latest_pred = {"label": "", "confidence": 0.0}
 
 def preprocess(image):
+    # Convert BGR (OpenCV) to RGB (model training)
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     image = cv2.resize(image, (32, 32))
     image = image.astype("float32") / 255.0
     image = np.expand_dims(image, axis=0)
@@ -33,13 +38,17 @@ def gen_frames():
 
             input_image = preprocess(frame)
             preds = model.predict(input_image, verbose=0)
+
+            # DEBUG: print raw predictions
+            # print(preds)
+
             class_index = np.argmax(preds)
             class_label = labels[class_index]
             confidence = np.max(preds)
 
             latest_pred = {"label": class_label, "confidence": confidence}
 
-            # Send raw frame without text overlay
+            # Send raw frame without overlay
             ret, buffer = cv2.imencode('.jpg', frame)
             frame = buffer.tobytes()
 
