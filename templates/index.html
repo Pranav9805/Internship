@@ -1,10 +1,38 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Sign Language Detection</title>
+    <meta charset="UTF-8" />
+    <title>Sign Language Recognizer with JS</title>
+    <style>
+        #prediction {
+            font-size: 32px;
+            margin-top: 15px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+    </style>
 </head>
 <body>
-    <h1>Real-time Sign Language Recognition</h1>
-    <img src="{{ url_for('video_feed') }}" width="640" height="480">
+    <h1>Real-Time Sign Language Prediction</h1>
+
+    <img src="{{ url_for('video_feed') }}" width="640" height="480" alt="Webcam Feed" />
+
+    <div id="prediction">Waiting for prediction...</div>
+
+    <script>
+        async function fetchPrediction() {
+            try {
+                const response = await fetch('/prediction');
+                const data = await response.json();
+                const predDiv = document.getElementById('prediction');
+                predDiv.textContent = `Prediction: ${data.label} (${data.confidence})`;
+            } catch (err) {
+                console.error('Error fetching prediction:', err);
+            }
+        }
+
+        // Update prediction every 500 ms
+        setInterval(fetchPrediction, 500);
+    </script>
 </body>
 </html>
